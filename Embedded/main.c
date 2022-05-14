@@ -5,13 +5,16 @@
 #include "Board_GLCD.h"
 #include "Board_Touch.h"
 #include "keypad.h"
+#include <stdlib.h>
+#include <time.h>
+
+// Screen variable definitions
 #define wait_delay HAL_Delay
 extern GLCD_FONT GLCD_Font_6x8;
 extern GLCD_FONT GLCD_Font_16x24;
 
-const int incAmount = 24;
-int pos = 4;
 
+// Time definition
 #ifdef __RTX
 extern uint32_t os_time;
 uint32_t HAL_GetTick(void) {
@@ -19,12 +22,6 @@ uint32_t HAL_GetTick(void) {
 }
 #endif
 
-
-struct snakePart {
-	int x;
-	int y;
-};
-int snakeLength = 1;
 
 /**
 * System Clock Configuration
@@ -60,62 +57,133 @@ void SystemClock_Config(void) {
 	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);
 }
 
+// 
 
-
-
-#include <stdio.h>
-//#include <unistd.h>
-#include <stdlib.h>
-//#include "kbhit.c"
-//#include <termios.h>
-//#include <fcntl.h>
-#include <time.h>
-
+// Game Area Dimensions
 #define Height 15
 #define Width 10
 
 
-// snake head position
+// player's head position
 int x = 3;
 int y = 4;
 
-// snake vars
+// player vars
 int head = 4;
 int tail = 1;
 
+/// Int used for the amount of spacing per character
+/// (Since font is 16x24, this is set to 24)
 int pixelBy = 24;
 
-// 1 for left, 2 for right, 3 for up, 4 for down
+// direction var (can be between 1 and 4)
 int direction = 2;
 
+// 2d array of numbers for the game area
 int gameArea[Height][Width];
 
+// food count
 int food = 0;
+
+// maximum number of food to display
 int numberOfFood = 7;
+
+// score count
 int score = 0;
 
-int gameIsRunning = 1;
+// bool for if game is running
+int gameIsRunning = 0;
+
+// bool for if has moved
 int hasMoved = 0;
+
+// bool for if has eaten
 int hasEaten = 0;
+
+// the num pressed on the membrane keypad
+int membraneNum  = 0;
+
+// init values to default state
+void initValues() {
+	hasEaten = 0;
+	hasMoved = 0;
+	score = 0;
+	numberOfFood = 7;
+	food = 0;
+	direction = 2;
+	head = 4;
+	tail = 1;
+	x = 3;
+  y = 4;	
+}
 
 // clearScreen
 void clearScreen() {
      GLCD_ClearScreen();
 }
 
-void gameOver() {
-		clearScreen();
-    GLCD_DrawString(0, 0*24, "Game OVER!!!");
-    gameIsRunning = 0;
+
+// score calc vars
+int score100, score10, score1, scoreTemp;
+
+// score string
+char scoreStr[] = "000";
+
+// calculate score
+void scoreCalc() {
+		// init the scrore calc values 
+		score100 = 0; score10 = 0; score1 = 0; scoreTemp = score;
+		while(scoreTemp > 0) {
+			if (scoreTemp >= 100) {
+				scoreTemp -= 100;
+				score100++;
+			}
+			else if (scoreTemp >= 10) {
+				scoreTemp -= 10;
+				score10++;
+			}
+			else if (scoreTemp >= 1) {
+				scoreTemp -= 1;
+				score1++;
+			}
+		}
+		
+		// display in correct place in game over string
+		scoreStr[0] = score100 + '0';
+		scoreStr[1] = score10 + '0';
+		scoreStr[2] = score1 + '0';
 }
 
+
+
+// game over func
+void gameOver() {
+		
+		// first, clear screen
+		clearScreen();
+		
+		// calculate the score
+		scoreCalc();
+	
+		// print some messages
+    GLCD_DrawString(0, 0*pixelBy, "      Game OVER!!!" );
+		GLCD_DrawString(0, 2*pixelBy, "Score was:");
+	
+		// print the score
+		GLCD_DrawString(7*pixelBy, 2*pixelBy, scoreStr);
+	
+		score = 0;
+}
+
+void setGameOver() {
+		gameIsRunning = 0;
+}
+
+// debug function to print a char to the screen (Not used in final version)
 char screenNumberTest(int i) {
 	if(i == 0) {
 		return '0';
 	} 
-	else if(i == 0) {
-		return '0';
-	}
 	else if(i == 1) {
 		return '1';
 	}
@@ -138,164 +206,180 @@ char screenNumberTest(int i) {
 }
 
 
+/**
+*		Main function for drawing game, based upon data in gameArea
+*/
 void drawGame() {
     // loop vars
     int i,j;
+	
+		// loop through all spaces in the game area 2d array
     for (i = 0; i <= Height; i++){
         for (j = 0; j <= Width; j++) {
-
-						char c = (char) gameArea[i][j];
 					
+						// debug code to print numbers instead of proper chars
 						//GLCD_DrawChar(i*24, j*24,screenNumberTest(gameArea[i][j]));
            
-            // place contains a border
-						
+            // if the space contains a border
             if (gameArea[i][j] == -1) {
-                if (j == Width) {
-                    //printf("+ \n");
-									    GLCD_SetForegroundColor(GLCD_COLOR_WHITE);
-										GLCD_DrawChar(i*pixelBy, j*pixelBy, '+');
-                }
-                else {
-                    //printf("+");
-									    	GLCD_SetForegroundColor(GLCD_COLOR_WHITE);
-										GLCD_DrawChar(i*pixelBy, j*pixelBy, '+');
-                }
+							GLCD_SetForegroundColor(GLCD_COLOR_WHITE);
+							GLCD_DrawChar(i*pixelBy, j*pixelBy, '+');
             }
+						// if the space contains a catepillar part
             else if (gameArea[i][j] > 0) {
-                //printf("%d",gameArea[i][j]); // DEBUG
+								GLCD_SetForegroundColor(GLCD_COLOR_GREEN);
+								
+								// head
                 if (gameArea[i][j] == head) {
-                   //printf("@");
-									    	GLCD_SetForegroundColor(GLCD_COLOR_GREEN);
 									GLCD_DrawChar(i*pixelBy, j*pixelBy, '@');
                 }
+								// body
                 else {
-                   //printf("#");
-										    	GLCD_SetForegroundColor(GLCD_COLOR_GREEN);
-										GLCD_DrawChar(i*pixelBy, j*pixelBy, '#');
+									GLCD_DrawChar(i*pixelBy, j*pixelBy, '#');
                 }
             }
+						// if the space contains a food
             else if (gameArea[i][j] == -2) {
-                //printf("~");
-
-						
-							GLCD_SetForegroundColor(GLCD_COLOR_RED);
-							GLCD_DrawChar(i*pixelBy, j*pixelBy, '~');
+								GLCD_SetForegroundColor(GLCD_COLOR_RED);
+								GLCD_DrawChar(i*pixelBy, j*pixelBy, '~');
             }
 
+						// if the space is 0, then it must be a blank space
             else {
-                //printf(" ");
 								GLCD_DrawChar(i*pixelBy, j*pixelBy, ' ');
             }
-						
-						
-
-
         }
     }
 }
 
-void initSnake () {
-    int i;
-    int var = y;
+// initialise the catepillar
+void initPlayer () {
+    int i; // loop var
+    int var = y; // var to keep track of y pos
 
-
-    /* for (i = 0; i <= Height; i++){
-         for (j = 0; j <= Width; j++) {
-             if (i == x && j == y) {
-                 gameArea[i][j] = 2;
-             }
-         }
-     } */
-    
+		// we start off at 0, then work our way up towards the head
+		// this will go through the gameArea and change the values to 1 through to the head value
+		// where the x/y is
     for (i = 0; i < head; i++) {
         var++;
-        gameArea[x][var-head] = i+1;
+        gameArea[x][var-head] = i+1; 
     }
 }
 
-void updateSnake() {
-    int i,j;
+// update the catepillar
+void updatePlayer() {
+    int i,j; // loop vars
+	
+		// loop through game area
     for (i = 0; i <= Height; i++){
         for (j = 0; j <= Width; j++) {
+						// if the space's number is equal to tail value,
+						// then set the tail to an empty space (basically remove the tail from the catepillar)
             if (gameArea[i][j] == tail) {
                 gameArea[i][j] = 0;
             }
         }
     }
+		// increase the tail val so it matches the new last space for the catepillar
     tail++;
-
 }
 
-
+// init the game area with 0 (empty space) in all spaces
 void initGameArea() {
     int i,j;
-               for (i = 0; i <= Height; i++){
-        for (j = 0; j <= Width; j++) {
-gameArea[i][j] = 0;
-        }}
-           
-}
-
-// function to init border positions 
-void updateGameArea() {
-// loop vars
-    int i,j;
-
     for (i = 0; i <= Height; i++){
         for (j = 0; j <= Width; j++) {
-
-            // if it is the top row, print only border
+					
+					// set to blank space
+					gameArea[i][j] = 0;
+					
+					// if it is the top row, print only border
             if (i == 0) {
-                //printf("+");
                 gameArea[i][j] = -1;
             }
                 // if it is the bottom row, print only border
             else if (i == Height) {
-                //printf("+");
                 gameArea[i][j] = -1;
             }
                 // if we are in the first pos on the left, print only border
             else if (j == 0) {
-                //printf("+");
                 gameArea[i][j] = -1;
             }
                 // if we are in the last pos on the right, print border and newline
             else if (j == Width) {
-                //printf(" +\n");
                 gameArea[i][j] = -1;
             }
         }
+		}  
+}
+
+
+void borders() {
+    int i,j;
+    for (i = 0; i <= Height; i++){
+        for (j = 0; j <= Width; j++) {
+				
+					// if it is the top row, print only border
+            if (i == 0) {
+                gameArea[i][j] = -1;
+            }
+                // if it is the bottom row, print only border
+            else if (i == Height) {
+                gameArea[i][j] = -1;
+            }
+                // if we are in the first pos on the left, print only border
+            else if (j == 0) {
+                gameArea[i][j] = -1;
+            }
+                // if we are in the last pos on the right, print border and newline
+            else if (j == Width) {
+                gameArea[i][j] = -1;
+            }
+        }
+		}  
+}
+
+// update game area values
+void generateFood() {
+    int i,j; // loop vars
+		int fx,fy; //food coords
+		int ran = rand(); // random number
+
+		// if we need more food on the screen
+    if (food < numberOfFood) {		
+				fx = ran % (Height-2) + 1; // get a space coord in-between gameArea[1][y] and gameArea[Height-1][y]
+				fy = ran % (Width-2) + 1; // get a space coord in-between gameArea[x][1] and gameArea[x][Width-1]
+				
+				// check if the potential food space is free
+				if (gameArea[fx][fy] == 0) {
+						
+						// set space to food value
+						gameArea[fx][fy] = -2;
+						food++; // food count
+				}   
     }
 }
 
 
-
-// Check if a key is pressed down, and if so return it's number
-int testingKeyValueGiver() {
-    //if(kbhit()) {
-   //     return getchar();
-    //}
-    //else {
-        //return -1;
-
-
-	
+// Debug function, change direction to random one half the time
+int randomDirectionDebug() {
 			int ran = rand(); 
 			if (rand() % 50 > 25) 
 			{
 				direction = 1 + (ran % 4);
 			} else {
 			return -1;
-			} // testing
-			
-   // }
+			}
 }
 
 // change the direction based upon which key is pressed
 void changeDirection() {
     int keyValue;
     keyValue = getInput();
+	
+		// change direction based upon key input
+		// note: catepillar cannot go straight from up to down, or left to right
+		// so extra check is used for current direction
     if (keyValue == 4 && direction != 4) //w, north
     {
         direction = 3;
@@ -315,13 +399,6 @@ void changeDirection() {
     keyValue = -1;
 }
 
-void eat() {
-    food--;
-    //head++;
-    
-}
-
-
 // move based upon direction
 void movement() {
     if (direction == 3) //w, up
@@ -332,14 +409,13 @@ void movement() {
             gameArea[x][y] = head;
         }
         else if (gameArea[x - 1][y] > 0) {
-            gameOver();
+            setGameOver();
         }
 
         else {
             // if next place is food, eat
             if (gameArea[x - 1][y] == -2) {
                 hasEaten = 1;
-                food--;
             }
 
             // else, move
@@ -356,15 +432,14 @@ void movement() {
             gameArea[x][y] = head;
         }
         else if (gameArea[x + 1][y] > 0) {
-            gameOver();
+            setGameOver();
         }
 
         else {
             
             // if next place is food, eat
             if (gameArea[x + 1][y] == -2) {
-                hasEaten = 1;
-                food--;
+							  hasEaten = 1;
             }
 
             // else, move normally
@@ -381,16 +456,14 @@ void movement() {
             gameArea[x][y] = head;
         }
         else if (gameArea[x][y - 1] > 0) {
-            gameOver();
+            setGameOver();
         }
 
         else {
-            //if (gameArea[x][y - 1] == -2) { eat(); }
 
             // if next place is food, eat
             if (gameArea[x][y - 1] == -2) {
-                hasEaten = 1;
-                food--;
+								hasEaten = 1;
             }
             y--;
                        head++;
@@ -405,42 +478,36 @@ void movement() {
             gameArea[x][y] = head;
         }
         else if (gameArea[x][y + 1] > 0) {
-            gameOver();
+            setGameOver();
         }
 
         else {    
             // if next place is food, eat        
             if (gameArea[x][y - 1] == -2) {
-                hasEaten = 1;
-                food--;
+							  hasEaten = 1;
             }
 
             // move normally
             y++;
-                       head++;
+            head++;
             gameArea[x][y] = head;
         }
     }
-    if (gameArea[x][y] == -2) { eat(); }
+		
+    //if (gameArea[x][y] == -2) { food--; score++; }
 
 
 }
 
-void generateFood() {
-    int fx,fy; //food coords
-    int foodIsGenerated = 0;
 
-		int ran = rand();
-    if (food < numberOfFood) {		
-				fx = ran % (Height-2) + 1;
-				fy = ran % (Width-2) + 1;
-				if (gameArea[fx][fy] == 0) {
-						gameArea[fx][fy] = -2;
-						
-						food++;
-				}   
-    }
+// function to run when has just eaten
+void eat() {
+	hasEaten = 1;
+	food--;
+	score ++;
 }
+
+
 
 void checkFood() {
     // loop vars
@@ -457,9 +524,7 @@ void checkFood() {
 }
 
 
-
-int membraneNum  = 0;
-
+// test to convert int to char for keypad
 char test(int keypadInput) {
 	if (keypadInput == 1) {
 		return ('1');
@@ -490,35 +555,67 @@ char test(int keypadInput) {
 	}
 }
 
-int main(void){
 
-			initGameArea();
-			initSnake();
+// main function
+int main(void){
+	
+				int keyValue;
 				
+		initializeMembranePins();
+	
+			// screen init
     	HAL_Init(); //Init Hardware Abstraction Layer
     	SystemClock_Config(); //Config Clocks
     	GLCD_Initialize(); //Init GLCD
-    	GLCD_ClearScreen();
-    	GLCD_SetFont(&GLCD_Font_16x24);
+    	GLCD_ClearScreen(); // clear the screen
+    	GLCD_SetFont(&GLCD_Font_16x24); // set font size
 			
+			// basic color setup
     	GLCD_SetBackgroundColor(GLCD_COLOR_BLACK);
     	GLCD_SetForegroundColor(GLCD_COLOR_WHITE);
-    	//GLCD_DrawString(0, 0*24, "   Name of the application");
-    	//GLCD_DrawString (0 , 1* 24+2, "GLCD touchscreen" ) ;
 			
        
+	// main aplication loop (superloop)
+	while (1) {
 			
-			//testing
-			//clearScreen();
-
-
+		
+		// init
+		initValues();
+		initGameArea();
+		initPlayer();
+		
+		clearScreen();
+		gameIsRunning = 0;
+		// main menu loop
+		while (gameIsRunning == 0) {
+			// check if we get input, if so then start game
+			keyValue = getInput();
+			if (keyValue != -1) {
+				gameIsRunning = 1;
+			}
+			// display main menu
+			clearScreen();
+			GLCD_SetForegroundColor(GLCD_COLOR_RED);
+			GLCD_DrawString(0, 0*pixelBy, "       CATEPILLAR GAME");
+			GLCD_SetForegroundColor(GLCD_COLOR_GREEN);
+			GLCD_DrawString (0 , 3* pixelBy, "          @####" );
+			GLCD_SetForegroundColor(GLCD_COLOR_WHITE);
+			GLCD_DrawString (0 , 7* pixelBy, "     PRESS KEYPAD TO PLAY!" );
+			GLCD_SetFont(&GLCD_Font_6x8);
+			GLCD_DrawString (0 , 10* pixelBy, "Embedded Project by: James Sparrow & Denis Ferenc" );
+			GLCD_SetFont(&GLCD_Font_16x24);
+			wait_delay(350);
+			}
+			
+			// main game loop
 			while(gameIsRunning == 1) {
 				clearScreen();			
-				updateGameArea();
+				borders();
 				if (hasEaten == 0) {
-            updateSnake();
+            updatePlayer();
         }
         else {
+						score++;
             hasEaten = 0;
         }
 				generateFood();
@@ -532,11 +629,17 @@ int main(void){
 				
 				
 				
-				initializeMembranePins();
+				
 			  membraneNum = getInput();
-				GLCD_DrawChar(17*pixelBy, 0*pixelBy, test(membraneNum));				
+				GLCD_SetFont(&GLCD_Font_6x8);
+				GLCD_DrawString (17*pixelBy, 10* pixelBy, "BTN PRESSED:" );
+				GLCD_SetFont(&GLCD_Font_16x24);
+				GLCD_DrawChar(16*pixelBy, 9*pixelBy, membraneNum + '0');				
 				
-				
+				scoreCalc();
+				GLCD_DrawString(16*pixelBy, 0*pixelBy, "SCORE:");
+				GLCD_DrawString(18*pixelBy, 1*pixelBy, scoreStr);	
+				GLCD_DrawChar(18*pixelBy, 2*pixelBy, score + '0');	
 			
 				
 				if (hasMoved == 0) {
@@ -545,114 +648,11 @@ int main(void){
         }
         hasMoved = 0;
 
-					wait_delay(300);
+					wait_delay(350);
 			}
-
-
-
-    /*while(gameIsRunning == 1) {
-
-        clearScreen();
-        updateGameArea();
-        if (hasEaten == 0) {
-            updateSnake();
-        }
-        else {
-            hasEaten = 0;
-        }
-        generateFood();
-        checkFood();
-        drawGame();
-        movement();
-        wait_delay(1000);
-        if (hasMoved == 0) {
-            changeDirection();
-            hasMoved = 1;
-        }
-
-        
-
-        hasMoved = 0;
-
-    }*/
-
+				clearScreen();
+				gameOver();
+				wait_delay(3000);
 			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-    	/*unsigned int flag;
-			int i = snakeLength;
-			
-			
-    	HAL_Init(); //Init Hardware Abstraction Layer
-    	SystemClock_Config(); //Config Clocks
-    	GLCD_Initialize(); //Init GLCD
-    	GLCD_ClearScreen();
-    	GLCD_SetFont(&GLCD_Font_16x24);
-			
-    	GLCD_SetBackgroundColor(GLCD_COLOR_WHITE);
-    	GLCD_SetForegroundColor(GLCD_COLOR_BLUE);
-    	//GLCD_DrawString(0, 0*24, "   Name of the application");
-    	//GLCD_DrawString (0 , 1* 24+2, "GLCD touchscreen" ) ;
-			
-    	GLCD_SetBackgroundColor(GLCD_COLOR_WHITE);
-    	GLCD_SetForegroundColor(GLCD_COLOR_BLUE);
-			
-			
-			
-    	for(;;){
-    		if(flag==0){
-    			flag = 1;
-					GLCD_ClearScreen();
-					for (; i > 0; i--) {
-						GLCD_DrawChar(pos*24, 3*24, 's');
-					}
-    			
-					pos--;
-    		}else{
-    			flag = 0;
-    			GLCD_DrawString (0, 5* 24, "                            " ) ;
-    			GLCD_DrawString(0, 7*24, "        This is awesome ");
-    		}
-    			
-    		wait_delay(1000);
-    	}*/
-    }
+	}
+}
