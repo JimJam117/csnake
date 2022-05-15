@@ -1,3 +1,25 @@
+/**
+@mainpage Caterpillar 
+
+@author James Sparrow & Denis Ferenc
+
+Caterpiller is a game like snake, popular on old nokia phones. 
+The obejctive is to eat as much food (red ~) as possible. 
+Each time the player eats food, the caterpillar grows larger, and it becomes harder to avoid the body of the caterpillar. 
+If the player moves into a space taken up by the caterpillar's body, the game ends. 
+*/
+
+
+
+
+
+/**
+ * @file main.c
+ * @author James Sparrow & Denis Ferenc
+ * @date 14 May 2022
+ * @brief The main file in the caterpillar game. Contains all the functions and code to run on stm32f7 discovery board.
+ */
+
 #include "stm32f7xx.h"                  // Device header
 #include <stdio.h>
 #include "stm32f7xx_hal.h"
@@ -24,8 +46,10 @@ uint32_t HAL_GetTick(void) {
 
 
 /**
-* System Clock Configuration
-*/
+ * @brief System Clock Configuration.
+ *
+ * This is the system clock configuration from the GLCD lab code on blackboard. It is required to get the GLCD working on the discovery board.
+ */
 void SystemClock_Config(void) {
 	RCC_OscInitTypeDef RCC_OscInitStruct;
 	RCC_ClkInitTypeDef RCC_ClkInitStruct;
@@ -59,51 +83,60 @@ void SystemClock_Config(void) {
 
 // 
 
-// Game Area Dimensions
+/// Game Area Dimensions
 #define Height 15
+/// Game Area Dimensions
 #define Width 10
 
 
-// player's head position
+/// player's x coord position
 int x = 3;
+/// player's y coord position
 int y = 4;
 
-// player vars
+/// The current value of the head of the caterpillar.
 int head = 4;
+/// The current value of the tail of the caterpillar.
 int tail = 1;
 
 /// Int used for the amount of spacing per character
 /// (Since font is 16x24, this is set to 24)
 int pixelBy = 24;
 
-// direction var (can be between 1 and 4)
+/// direction var (can be between 1 and 4)
 int direction = 2;
 
-// 2d array of numbers for the game area
+/// 2d array of numbers for the game area
 int gameArea[Height][Width];
 
-// food count
+/// food count
 int food = 0;
 
-// maximum number of food to display
+/// maximum number of food to display
 int numberOfFood = 7;
 
-// score count
+/// score count
 int score = 0;
 
-// bool for if game is running
+/// bool for if game is running
 int gameIsRunning = 0;
 
-// bool for if has moved
+/// bool for if has moved
 int hasMoved = 0;
 
-// bool for if has eaten
+/// bool for if has eaten
 int hasEaten = 0;
 
-// the num pressed on the membrane keypad
+/// the num pressed on the membrane keypad
 int membraneNum  = 0;
 
-// init values to default state
+
+/**
+ * @brief Init the core values to the default state.
+ *
+ * This function will reset the values to their initial state. It is run before the game is set up, to make sure a new game can be generated from a clean starting point.
+ */
+// 
 void initValues() {
 	hasEaten = 0;
 	hasMoved = 0;
@@ -117,7 +150,12 @@ void initValues() {
   y = 4;	
 }
 
-// clearScreen
+/**
+ * @brief Clears the GCLD Screen.
+ *
+ * This function will clear the GLCD Screen. It is used in between screen changes, and is run every frame prior to drawing a new frame.
+ */
+// 
 void clearScreen() {
      GLCD_ClearScreen();
 }
@@ -129,7 +167,12 @@ int score100, score10, score1, scoreTemp;
 // score string
 char scoreStr[] = "000";
 
-// calculate score
+/**
+ * @brief Calculate the score, to be displayed in scoreStr.
+ *
+ * This function will convert the int score value into a string, so it can be easily displayed on the game screen.
+ */
+// 
 void scoreCalc() {
 		// init the scrore calc values 
 		score100 = 0; score10 = 0; score1 = 0; scoreTemp = score;
@@ -155,8 +198,10 @@ void scoreCalc() {
 }
 
 
-
-// game over func
+/**
+*		Display the game over screen.
+*		This function will display the game over screen, which gives the user a "game over" message, as well as providing the final score. The screen is cleaned and scoreCalc() is run before displaying the screen.
+*/
 void gameOver() {
 		
 		// first, clear screen

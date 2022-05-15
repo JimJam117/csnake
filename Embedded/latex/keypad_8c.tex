@@ -1,0 +1,75 @@
+\hypertarget{keypad_8c}{}\doxysection{keypad.\+c File Reference}
+\label{keypad_8c}\index{keypad.c@{keypad.c}}
+{\ttfamily \#include \char`\"{}keypad.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}stm32f7xx\+\_\+hal.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}stm32f7xx\+\_\+hal\+\_\+gpio.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{keypad_8c_adffecb6a54831e212b418c02e3b247d2}{initialize\+Membrane\+Pins}} (void)
+\item 
+int \mbox{\hyperlink{keypad_8c_a8772d7596623fc648299991615b144dc}{convert\+Pins\+To\+Num}} (int k, int r)
+\item 
+void \mbox{\hyperlink{keypad_8c_ae9e96146e7b919e0cf6f70ad80b18c9b}{turn\+On}} (int pin\+No)
+\item 
+void \mbox{\hyperlink{keypad_8c_a4c340d02ae3925ed880c7f4a1e12ee8e}{turn\+Off}} (int pin\+No)
+\item 
+GPIO\+\_\+\+Pin\+State \mbox{\hyperlink{keypad_8c_ae843d890b8b85e2ae0b855e3c4b31ffe}{read\+Pin}} (int number)
+\item 
+void \mbox{\hyperlink{keypad_8c_abcb618b1f6c0120fa5029cd8ff5afcad}{set\+Cols\+In}} ()
+\item 
+void \mbox{\hyperlink{keypad_8c_ac39030ee2f048ea19e68da3cb79f4c51}{set\+Cols\+Out}} ()
+\item 
+int \mbox{\hyperlink{keypad_8c_aeb1b48abe7f99ab8e1d71426f28ab025}{get\+Input}} (void)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{keypad_8c_a8772d7596623fc648299991615b144dc}\label{keypad_8c_a8772d7596623fc648299991615b144dc}} 
+\index{keypad.c@{keypad.c}!convertPinsToNum@{convertPinsToNum}}
+\index{convertPinsToNum@{convertPinsToNum}!keypad.c@{keypad.c}}
+\doxysubsubsection{\texorpdfstring{convertPinsToNum()}{convertPinsToNum()}}
+{\footnotesize\ttfamily int convert\+Pins\+To\+Num (\begin{DoxyParamCaption}\item[{int}]{k,  }\item[{int}]{r }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{keypad_8c_aeb1b48abe7f99ab8e1d71426f28ab025}\label{keypad_8c_aeb1b48abe7f99ab8e1d71426f28ab025}} 
+\index{keypad.c@{keypad.c}!getInput@{getInput}}
+\index{getInput@{getInput}!keypad.c@{keypad.c}}
+\doxysubsubsection{\texorpdfstring{getInput()}{getInput()}}
+{\footnotesize\ttfamily int get\+Input (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{keypad_8c_adffecb6a54831e212b418c02e3b247d2}\label{keypad_8c_adffecb6a54831e212b418c02e3b247d2}} 
+\index{keypad.c@{keypad.c}!initializeMembranePins@{initializeMembranePins}}
+\index{initializeMembranePins@{initializeMembranePins}!keypad.c@{keypad.c}}
+\doxysubsubsection{\texorpdfstring{initializeMembranePins()}{initializeMembranePins()}}
+{\footnotesize\ttfamily void initialize\+Membrane\+Pins (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{keypad_8c_ae843d890b8b85e2ae0b855e3c4b31ffe}\label{keypad_8c_ae843d890b8b85e2ae0b855e3c4b31ffe}} 
+\index{keypad.c@{keypad.c}!readPin@{readPin}}
+\index{readPin@{readPin}!keypad.c@{keypad.c}}
+\doxysubsubsection{\texorpdfstring{readPin()}{readPin()}}
+{\footnotesize\ttfamily GPIO\+\_\+\+Pin\+State read\+Pin (\begin{DoxyParamCaption}\item[{int}]{number }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{keypad_8c_abcb618b1f6c0120fa5029cd8ff5afcad}\label{keypad_8c_abcb618b1f6c0120fa5029cd8ff5afcad}} 
+\index{keypad.c@{keypad.c}!setColsIn@{setColsIn}}
+\index{setColsIn@{setColsIn}!keypad.c@{keypad.c}}
+\doxysubsubsection{\texorpdfstring{setColsIn()}{setColsIn()}}
+{\footnotesize\ttfamily void set\+Cols\+In (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{keypad_8c_ac39030ee2f048ea19e68da3cb79f4c51}\label{keypad_8c_ac39030ee2f048ea19e68da3cb79f4c51}} 
+\index{keypad.c@{keypad.c}!setColsOut@{setColsOut}}
+\index{setColsOut@{setColsOut}!keypad.c@{keypad.c}}
+\doxysubsubsection{\texorpdfstring{setColsOut()}{setColsOut()}}
+{\footnotesize\ttfamily void set\+Cols\+Out (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{keypad_8c_a4c340d02ae3925ed880c7f4a1e12ee8e}\label{keypad_8c_a4c340d02ae3925ed880c7f4a1e12ee8e}} 
+\index{keypad.c@{keypad.c}!turnOff@{turnOff}}
+\index{turnOff@{turnOff}!keypad.c@{keypad.c}}
+\doxysubsubsection{\texorpdfstring{turnOff()}{turnOff()}}
+{\footnotesize\ttfamily void turn\+Off (\begin{DoxyParamCaption}\item[{int}]{pin\+No }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{keypad_8c_ae9e96146e7b919e0cf6f70ad80b18c9b}\label{keypad_8c_ae9e96146e7b919e0cf6f70ad80b18c9b}} 
+\index{keypad.c@{keypad.c}!turnOn@{turnOn}}
+\index{turnOn@{turnOn}!keypad.c@{keypad.c}}
+\doxysubsubsection{\texorpdfstring{turnOn()}{turnOn()}}
+{\footnotesize\ttfamily void turn\+On (\begin{DoxyParamCaption}\item[{int}]{pin\+No }\end{DoxyParamCaption})}
+
