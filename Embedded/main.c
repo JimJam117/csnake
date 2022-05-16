@@ -1402,7 +1402,6 @@ int main(void)
 			scoreCalc();
 			GLCD_DrawString(16 * pixelBy, 0 * pixelBy, "SCORE:");
 			GLCD_DrawString(18 * pixelBy, 1 * pixelBy, scoreStr);
-			GLCD_DrawChar(18 * pixelBy, 2 * pixelBy, score + '0');
 
 			if (hasMoved == 0)
 			{
