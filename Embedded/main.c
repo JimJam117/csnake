@@ -14,6 +14,8 @@ If the player moves into a space taken up by the caterpillar's body, the game en
  * @brief The main file in the caterpillar game. Contains all the functions and code to run on stm32f7 discovery board.
  */
 
+
+// includes
 #include "stm32f7xx.h" // Device header
 #include <stdio.h>
 #include "stm32f7xx_hal.h"
@@ -77,58 +79,105 @@ void SystemClock_Config(void)
 	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);
 }
 
-//
+
 
 /// Game Area Dimensions
 #define Height 15
 /// Game Area Dimensions
 #define Width 10
 
-/// player's x coord position
+/**
+ * player's x coord position
+ */
 int x = 3;
-/// player's y coord position
+
+/**
+ * player's y coord position
+ */
 int y = 4;
 
-/// The current value of the head of the caterpillar.
+/**
+ * The current value of the head of the caterpillar.
+ */
 int head = 4;
-/// The current value of the tail of the caterpillar.
+
+/**
+ * The current value of the tail of the caterpillar.
+ */
 int tail = 1;
 
-/// Int used for the amount of spacing per character
-/// (Since font is 16x24, this is set to 24)
+/**
+ * Int used for the amount of spacing per character
+ * (Since font is 16x24, this is set to 24)
+ */
 int pixelBy = 24;
 
-/// direction var (can be between 1 and 4)
+/**
+ * direction var (can be between 1 and 4)
+ */
 int direction = 2;
 
-/// 2d array of numbers for the game area
+/**
+ * @brief 2d array of numbers for the game area
+ * 
+ * This is the playing field for the game. It is a grid of integers, with
+ * each integer representing a different concept in the game. They are as follows:
+ * -2 = food (~)
+ * -1 = border (+)
+ *  0 = empty space ( )
+ *  Any other number above 0 = parts of the catepillar. The head of the catepillar
+ *  Will be represented with a @ character, and the body with # characters.
+ */
 int gameArea[Height][Width];
 
-/// food count
+
+/**
+ * Number of food that is on the playing field currently.
+ */
 int food = 0;
 
-/// maximum number of food to display
+/**
+ * Number of food to generate on the playing field. Acts as the max number
+ * that can appear at any one time.
+ */
 int numberOfFood = 7;
 
-/// score count
+/**
+ * Count of the score.
+ */
 int score = 0;
 
-/// bool for if game is running
+/**
+ * A boolean used to check if the game is running. If this is set to false (as it is by
+ * default), then the game will go to the main menu first.
+ */
 int gameIsRunning = 0;
 
-/// bool for if has moved
+/**
+ * Boolean for if the player has moved.
+ */
 int hasMoved = 0;
 
-/// bool for if has eaten
+/**
+ * Boolean for if the player has eaten.
+ */
 int hasEaten = 0;
 
-/// the num pressed on the membrane keypad
+/**
+ * The number pressed down on the membrane keypad.
+ */
 int membraneNum = 0;
 
-/// level number
+/**
+ * The number of the level the player is currently on. This
+ * is displayed on the 7seg, and increases as the player reaches
+ * new score milestones. As the level increases, so does the game speed.
+ */
 int level = 0;
 
-// Game refresh speed in ms
+/**
+ * The game speed (or more accurately, the delay between screen refreshes) in milliseconds.
+ */
 int gameSpeed = 50;
 
 /**
@@ -159,6 +208,10 @@ void initValues()
 /// ========== ========== ============ ///
 /// ========== ========== ============ ///
 
+
+/**
+ * The code used to reset pin D0.
+ */
 void resetPinD0()
 {
 	GPIO_InitTypeDef gpio_pin_0;
@@ -173,6 +226,9 @@ void resetPinD0()
 	HAL_GPIO_WritePin(GPIOC, gpio_pin_0.Pin, GPIO_PIN_RESET);
 }
 
+/**
+ * The code used to reset pin D1.
+ */
 void resetPinD1()
 {
 	GPIO_InitTypeDef gpio_pin_1;
@@ -187,6 +243,9 @@ void resetPinD1()
 	HAL_GPIO_WritePin(GPIOC, gpio_pin_1.Pin, GPIO_PIN_RESET);
 }
 
+/**
+ * The code used to reset pin D2.
+ */
 void resetPinD2()
 {
 	GPIO_InitTypeDef gpio_pin_2;
@@ -201,6 +260,9 @@ void resetPinD2()
 	HAL_GPIO_WritePin(GPIOG, gpio_pin_2.Pin, GPIO_PIN_RESET);
 }
 
+/**
+ * The code used to reset pin D3.
+ */
 void resetPinD3()
 {
 	GPIO_InitTypeDef gpio_pin_3;
@@ -215,6 +277,9 @@ void resetPinD3()
 	HAL_GPIO_WritePin(GPIOB, gpio_pin_3.Pin, GPIO_PIN_RESET);
 }
 
+/**
+ * The code used to reset pin D4.
+ */
 void resetPinD4()
 {
 	GPIO_InitTypeDef gpio_pin_4;
@@ -229,6 +294,9 @@ void resetPinD4()
 	HAL_GPIO_WritePin(GPIOG, gpio_pin_4.Pin, GPIO_PIN_RESET);
 }
 
+/**
+ * The code used to reset pin D5.
+ */
 void resetPinD5()
 {
 	GPIO_InitTypeDef gpio_pin_5;
@@ -243,6 +311,9 @@ void resetPinD5()
 	HAL_GPIO_WritePin(GPIOI, gpio_pin_5.Pin, GPIO_PIN_RESET);
 }
 
+/**
+ * The code used to reset pin D6.
+ */
 void resetPinD6()
 {
 	GPIO_InitTypeDef gpio_pin_6;
@@ -256,6 +327,9 @@ void resetPinD6()
 	HAL_GPIO_WritePin(GPIOH, gpio_pin_6.Pin, GPIO_PIN_RESET);
 }
 
+/**
+ * Reset all the pins. This should be run before trying to update the 7seg.
+ */
 void resetPins()
 {
 	resetPinD0();
@@ -267,6 +341,9 @@ void resetPins()
 	resetPinD6();
 }
 
+/**
+ * The code used to initialise pin D0, turning on the section a of the 7seg.
+ */
 void initialisePinD0()
 {
 	GPIO_InitTypeDef gpio_pin_0;
@@ -281,6 +358,9 @@ void initialisePinD0()
 	HAL_GPIO_WritePin(GPIOC, gpio_pin_0.Pin, GPIO_PIN_SET);
 }
 
+/**
+ * The code used to initialise pin D1, turning on the section b of the 7seg.
+ */
 void initialisePinD1()
 {
 	GPIO_InitTypeDef gpio_pin_1;
@@ -295,6 +375,9 @@ void initialisePinD1()
 	HAL_GPIO_WritePin(GPIOC, gpio_pin_1.Pin, GPIO_PIN_SET);
 }
 
+/**
+ * The code used to initialise pin D2, turning on the section c of the 7seg.
+ */
 void initialisePinD2()
 {
 	GPIO_InitTypeDef gpio_pin_2;
@@ -309,6 +392,9 @@ void initialisePinD2()
 	HAL_GPIO_WritePin(GPIOG, gpio_pin_2.Pin, GPIO_PIN_SET);
 }
 
+/**
+ * The code used to initialise pin D3, turning on the section d of the 7seg.
+ */
 void initialisePinD3()
 {
 	GPIO_InitTypeDef gpio_pin_3;
@@ -323,6 +409,9 @@ void initialisePinD3()
 	HAL_GPIO_WritePin(GPIOB, gpio_pin_3.Pin, GPIO_PIN_SET);
 }
 
+/**
+ * The code used to initialise pin D4, turning on the section e of the 7seg.
+ */
 void initialisePinD4()
 {
 	GPIO_InitTypeDef gpio_pin_4;
@@ -337,6 +426,9 @@ void initialisePinD4()
 	HAL_GPIO_WritePin(GPIOG, gpio_pin_4.Pin, GPIO_PIN_SET);
 }
 
+/**
+ * The code used to initialise pin D5, turning on the section f of the 7seg.
+ */
 void initialisePinD5()
 {
 	GPIO_InitTypeDef gpio_pin_5;
@@ -351,6 +443,9 @@ void initialisePinD5()
 	HAL_GPIO_WritePin(GPIOI, gpio_pin_5.Pin, GPIO_PIN_SET);
 }
 
+/**
+ * The code used to initialise pin D6, turning on the section g of the 7seg.
+ */
 void initialisePinD6()
 {
 	GPIO_InitTypeDef gpio_pin_6;
@@ -364,6 +459,9 @@ void initialisePinD6()
 	HAL_GPIO_WritePin(GPIOH, gpio_pin_6.Pin, GPIO_PIN_SET);
 }
 
+/**
+ * The code used to initialise all the pins, turning all the 7seg parts on at once.
+ */
 void initalizePins()
 {
 
@@ -376,12 +474,18 @@ void initalizePins()
 	initialisePinD6();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 1.
+ */
 void displayOne()
 {
 	initialisePinD5();
 	initialisePinD4();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 2.
+ */
 void displayTwo()
 {
 	initialisePinD0();
@@ -391,6 +495,9 @@ void displayTwo()
 	initialisePinD6();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 3.
+ */
 void displayThree()
 {
 	initialisePinD0();
@@ -400,6 +507,9 @@ void displayThree()
 	initialisePinD6();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 4.
+ */
 void displayFour()
 {
 	initialisePinD1();
@@ -408,6 +518,9 @@ void displayFour()
 	initialisePinD6();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 5.
+ */
 void displayFive()
 {
 	initialisePinD0();
@@ -417,6 +530,9 @@ void displayFive()
 	initialisePinD6();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 6.
+ */
 void displaySix()
 {
 	initialisePinD0();
@@ -427,6 +543,9 @@ void displaySix()
 	initialisePinD6();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 7.
+ */
 void displaySeven()
 {
 	initialisePinD0();
@@ -434,6 +553,9 @@ void displaySeven()
 	initialisePinD2();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 8.
+ */
 void displayEight()
 {
 	initialisePinD0();
@@ -445,6 +567,9 @@ void displayEight()
 	initialisePinD6();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 9.
+ */
 void displayNine()
 {
 	initialisePinD0();
@@ -454,6 +579,9 @@ void displayNine()
 	initialisePinD6();
 }
 
+/**
+ * The code used to initialise all the pins necessary to show on the 7seg the number 0.
+ */
 void displayZero()
 {
 	initialisePinD0();
@@ -616,7 +744,9 @@ void clearScreen()
 // score calc vars
 int score100, score10, score1, scoreTemp;
 
-// score string
+/**
+ * The string (array of chars) used to display the score.
+ */
 char scoreStr[] = "000";
 
 /**
@@ -680,10 +810,14 @@ void gameOver()
 	score = 0;
 }
 
+/**
+ * Used to set the gameIsRunning variable to 0.
+ */
 void setGameOver()
 {
 	gameIsRunning = 0;
 }
+
 
 // debug function to print a char to the screen (Not used in final version)
 char screenNumberTest(int i)
@@ -721,6 +855,7 @@ char screenNumberTest(int i)
 		return '-';
 	}
 }
+
 
 /**
  *		Main function for drawing game, based upon data in gameArea
@@ -777,7 +912,9 @@ void drawGame()
 	}
 }
 
-// initialise the catepillar
+/**
+ *	Initialise the catepillar.
+ */
 void initPlayer()
 {
 	int i;		 // loop var
@@ -793,7 +930,11 @@ void initPlayer()
 	}
 }
 
-// update the catepillar
+/**
+ *	Update the catepillar. This code mostly deals with the tail, or removing the last
+ * part of the catepillar and increasing the pointing variable so it matches the new end
+ * of the catepillar.
+ */
 void updatePlayer()
 {
 	int i, j; // loop vars
@@ -815,7 +956,10 @@ void updatePlayer()
 	tail++;
 }
 
-// init the game area with 0 (empty space) in all spaces
+
+/**
+ *	Initialize the game area with a 0 in every space. Also adds the border to the playing field.
+ */
 void initGameArea()
 {
 	int i, j;
@@ -851,6 +995,9 @@ void initGameArea()
 	}
 }
 
+/**
+ *	Initializes the borders to the gamearea.
+ */
 void borders()
 {
 	int i, j;
@@ -883,7 +1030,9 @@ void borders()
 	}
 }
 
-// update game area values
+/**
+ *	Generate new food if there is not enough on the screen.
+ */
 void generateFood()
 {
 	int i, j;		  // loop vars
@@ -921,7 +1070,11 @@ int randomDirectionDebug()
 	}
 }
 
-// change the direction based upon which key is pressed
+/**
+ *	Used to change the direction of the catepillar. Has checks to make sure that the 
+ * catepillar is not going in an illegal direction (i.e. the catepillar cannot start to travel 
+ * south if it is currently travelling north.)
+ */
 void changeDirection()
 {
 	int keyValue;
@@ -949,7 +1102,16 @@ void changeDirection()
 	keyValue = -1;
 }
 
-// move based upon direction
+/**
+ * @brief Main function for handling the movement of the catepillar.
+ *
+ *	Main function for handling the movement of the catepillar. Checks what direction
+ * the catepillar is travelling in, then attempts to move in that direction. If the next
+ * slot on the grid contains a food, then the catepillar will eat it. If the next slot contains
+ * a border, the catepillar will teleport to the other end of the screen. If the slot contains
+ * a part of the catepillars body, the game will end. Finally, if the slot contains nothing (i.e. is empty)
+ * then the catepillar will move normally into that slot.
+ */
 void movement()
 {
 	if (direction == 3) // w, up
@@ -1064,7 +1226,9 @@ void movement()
 	// if (gameArea[x][y] == -2) { food--; score++; }
 }
 
-// function to run when has just eaten
+/**
+ *	Function to increase score when the catepillar has eaten.
+ */
 void eat()
 {
 	hasEaten = 1;
@@ -1072,6 +1236,10 @@ void eat()
 	score++;
 }
 
+/**
+ *	Extra function used to make sure that the amount of food on the playing field at all times
+ * matches the value of the 'food' variable, incrementing if it drops down.
+ */
 void checkFood()
 {
 	// loop vars
@@ -1133,7 +1301,10 @@ char test(int keypadInput)
 	}
 }
 
-// main function
+/**
+ *	Main function, runs when program starts. Initialises everything and starts the game's
+ * superloop.
+ */
 int main(void)
 {
 
